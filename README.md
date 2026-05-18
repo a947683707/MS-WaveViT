@@ -1,297 +1,123 @@
-# MS-WaveViT: Multi-Scale Wavelet Vision Transformer for Image Quality Assessment
+# MS-WaveViT: Multi-Scale Wavelet Vision Transformer with HDR-Aware Attention for HDR Image Quality Assessment
 
-## 项目简介
+This repository provides the implementation of **MS-WaveViT**, a no-reference HDR image quality assessment model. The proposed model integrates a WaveViT backbone, HDR-aware feature enhancement, multi-scale wavelet attention, and a HyperNet-TargetNet prediction framework.
+## Important Clarifications
 
-MS-WaveViT是一个基于小波变换和Vision Transformer的图像质量评估(IQA)项目，专门针对HDR图像质量评估进行了优化。该项目结合了小波变换的多尺度特征提取能力和Vision Transformer的全局建模能力，通过超网络(HyperNetwork)架构实现了高精度的无参考图像质量评估。
+This repository has been updated to clarify the relationship between the proposed MS-WaveViT model and the baseline HyperIQA implementation.
 
-## 核心特性
+### 1. Wavelet basis
 
-### 🌊 WaveViT架构
-- **小波注意力机制**: 集成Haar小波变换的注意力模块，能够捕获图像的多频域特征
-- **多尺度特征提取**: 通过4个阶段的层次化特征提取，从低级纹理到高级语义特征
-- **自适应下采样**: 使用可学习的下采样策略，保持重要特征信息
+The original WaveViT backbone contains Haar-based wavelet attention. In contrast, the proposed Multi-Scale Wavelet Attention (MSWA) module uses **Daubechies-4 (db4)** as the default wavelet basis.
 
-### 🎯 超网络架构
-- **动态权重生成**: 为每张图像生成专用的目标网络权重
-- **轻量化设计**: 优化的3层目标网络结构，提高推理效率
-- **HDR特化**: 针对HDR图像特点进行的特殊优化
+Therefore, the Haar wavelet mentioned in the backbone and the db4 wavelet used in the proposed MSWA module correspond to different parts of the architecture. The wavelet-basis ablation experiments in the manuscript refer to the MSWA module.
 
-### 📊 多数据集支持
-- **ESPL_LIVE_HDR**: 主要针对HDR图像质量评估
-- **传统数据集**: 支持LIVE、CSIQ、TID2013、KonIQ-10k、BID等经典IQA数据集
+### 2. Relation to HyperIQA
 
-## 项目结构
+MS-WaveViT adopts the HyperNet-TargetNet prediction paradigm for content-adaptive quality regression. The original HyperIQA-related code is retained only as a baseline/reference implementation and is not the default training pipeline of the proposed model.
 
-```
-python demo.py
-```
+The proposed model is implemented in:
 
-You will get a quality score ranging from 0-100, and a higher value indicates better image quality.
+- `wave_models/wavehypernet.py`
 
-### Training & Testing on IQA databases
+The proposed training solver is implemented in:
 
-Training and testing our model on the LIVE Challenge Dataset.
+- `wave_models/wavehyper_solver.py`
 
-```
-python train_test_IQA.py
-```
+The main training entry is:
 
-Some available options:
-* `--dataset`: Training and testing dataset, support datasets: livec | koniq-10k | bid | live | csiq | tid2013.
-* `--train_patch_num`: Sampled image patch number per training image.
-* `--test_patch_num`: Sampled image patch number per testing image.
-* `--batch_size`: Batch size.
+- `train_mswavevit.py`
 
-When training or testing on CSIQ dataset, please put 'csiq_label.txt' in your own CSIQ folder.
+### 3. Main datasets
 
-## Citation
-If you find this work useful for your research, please cite our paper:
-```
-@InProceedings{Su_2020_CVPR,
-author = {Su, Shaolin and Yan, Qingsen and Zhu, Yu and Zhang, Cheng and Ge, Xin and Sun, Jinqiu and Zhang, Yanning},
-title = {Blindly Assess Image Quality in the Wild Guided by a Self-Adaptive Hyper Network},
-booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-month = {June},
-year = {2020}
-}
-```
+The main experiments in the manuscript are conducted on the **Narwaria** and **Korshunov** HDR-IQA datasets.
+
+Dataset support is provided in:
+
+- `data_loader.py`
+- `folders.py`
+
+Raw HDR images are not redistributed in this repository due to dataset license restrictions. Users should download the datasets from the official source and organize them following the required folder structure.
+## Repository Structure
+
+```text
 MS-WaveViT/
-├── wave_models/                 # WaveViT核心模型
-│   ├── wavevit.py              # WaveViT主架构
-│   ├── wavehypernet.py         # 超网络实现
-│   ├── wavehyper_solver.py     # 训练求解器
-│   ├── torch_wavelets.py       # 小波变换实现
-│   └── train_wavehypernet.py   # WaveViT训练脚本
-├── models.py                   # 原始HyperIQA模型
-├── HyerIQASolver.py           # 原始求解器
-├── My_train.py                # 自定义训练脚本
-├── data_loader.py             # 数据加载器
-├── folders.py                 # 数据集处理
-├── demo.py                    # 演示脚本
-└── README.md                  # 项目文档
-
-
-## 环境要求
-
-### 基础依赖
-```bash
-Python >= 3.7
-PyTorch >= 1.8.0
-torchvision >= 0.9.0
+├── train_mswavevit.py
+├── data_loader.py
+├── folders.py
+├── wave_models/
+│   ├── wavehypernet.py
+│   ├── wavehyper_solver.py
+│   ├── wavevit.py
+│   └── torch_wavelets.py
+├── models.py
+├── HyerIQASolver.py
+└── README.md
 ```
 
-### 完整依赖
+Note: `models.py` and `HyerIQASolver.py` correspond to the original HyperIQA baseline/reference implementation. They are not used as the default MS-WaveViT training pipeline.
+## Environment
+
 ```bash
 pip install torch torchvision
-pip install scipy numpy
-pip install timm
-pip install PyWavelets
-pip install tqdm
-pip install openpyxl  # BID数据集支持
+pip install numpy scipy tqdm timm PyWavelets opencv-python openpyxl
+```
+## Dataset Preparation
+
+Please organize the HDR-IQA datasets as follows:
+
+```text
+upiq_dataset/
+├── upiq_subjective_scores.csv
+└── images/
+    ├── narwaria/
+    │   ├── 01/
+    │   ├── 02/
+    │   └── ...
+    └── korshunov/
+        ├── ...
 ```
 
-## 快速开始
+The raw HDR images are not included in this repository. Please download the datasets from the official source and place them following the folder structure above.
+## Training
 
-### 1. 模型推理
-
-使用预训练的WaveViT模型进行单张图像质量评估：
-
-```python
-import torch
-from wave_models.wavehypernet import WaveHyperNet, SimplifiedTargetNet
-from PIL import Image
-import torchvision.transforms as transforms
-
-# 加载模型
-model = WaveHyperNet()
-model.load_state_dict(torch.load('path/to/wavehyper_best.pth'))
-model.eval()
-
-# 图像预处理
-transform = transforms.Compose([
-    transforms.Resize((960, 540)),
-    transforms.RandomCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=(0.485, 0.456, 0.406), 
-                        std=(0.229, 0.224, 0.225))
-])
-
-# 质量评估
-image = Image.open('your_image.jpg')
-input_tensor = transform(image).unsqueeze(0)
-
-with torch.no_grad():
-    paras = model(input_tensor)
-    target_net = SimplifiedTargetNet()
-    quality_score = target_net(paras['target_in_vec'], paras)
-    print(f"图像质量分数: {quality_score.item():.4f}")
-```
-
-### 2. 训练WaveViT模型
-
-在ESPL_LIVE_HDR数据集上训练：
+Train MS-WaveViT on Narwaria:
 
 ```bash
-cd wave_models
-python train_wavehypernet.py \
-    --dataset ESPL_LIVE_HDR \
-    --batch_size 32 \
-    --epochs 20 \
-    --lr 1e-4 \
-    --patch_size 224
+python train_mswavevit.py --dataset narwaria --batch_size 8 --epochs 12 --train_patch_num 25 --test_patch_num 25 --patch_size 224 --train_test_num 10 --lr 2e-5 --weight_decay 5e-4 --lr_ratio 10
 ```
 
-### 3. 训练原始HyperIQA
+Train MS-WaveViT on Korshunov:
 
 ```bash
-python My_train.py \
-    --dataset ESPL_LIVE_HDR \
-    --batch_size 96 \
-    --epochs 16 \
-    --lr 2e-5
+python train_mswavevit.py --dataset korshunov --batch_size 8 --epochs 12 --train_patch_num 25 --test_patch_num 25 --patch_size 224 --train_test_num 10 --lr 2e-5 --weight_decay 5e-4 --lr_ratio 10
 ```
+## Reproducibility
 
-## 模型架构详解
+The reported results are obtained from 10 independent train/test rounds. The training script records the PLCC and SRCC values for each round and saves the best model checkpoint.
 
-### WaveViT Backbone
+The main files for reproducing the proposed method are:
 
-Input (3×224×224)
-↓
-Stem (Conv+BN+ReLU) → (64×56×56)
-↓
-Stage 1: WaveAttention × 3 → (128×28×28)
-↓
-Stage 2: WaveAttention × 4 → (320×14×14)
-↓
-Stage 3: StandardAttention × 6 → (448×7×7)
-↓
-Stage 4: StandardAttention × 3 → (448×7×7)
-↓
-ClassAttention → (448,)
+- `train_mswavevit.py`
+- `wave_models/wavehyper_solver.py`
+- `wave_models/wavehypernet.py`
+- `wave_models/wavevit.py`
+- `wave_models/torch_wavelets.py`
+- `data_loader.py`
+- `folders.py`
+- ## Acknowledgement
 
+The HyperNet-TargetNet prediction paradigm is inspired by HyperIQA. We thank the HyperIQA authors for releasing their implementation.## Acknowledgement
 
-### 小波注意力机制
-- **DWT分解**: 将特征图分解为LL、LH、HL、HH四个子带
-- **频域建模**: 分别对不同频率成分进行注意力计算
-- **特征融合**: 通过IDWT重构增强的特征表示
+The HyperNet-TargetNet prediction paradigm is inspired by HyperIQA. We thank the HyperIQA authors for releasing their implementation.
+## Citation
 
-### 超网络设计
-- **特征投影**: 448维特征 → 64维超网络输入
-- **权重生成**: 为3层目标网络生成动态权重和偏置
-- **质量预测**: 目标网络输出0-1范围的质量分数
-
-
-### 其他支持的数据集
-- **LIVE**: 传统失真图像数据集
-- **CSIQ**: 主观图像质量数据集  
-- **TID2013**: 大规模失真图像数据集
-- **KonIQ-10k**: 野外图像质量数据集
-- **BID**: 图像失真数据集
-
-
-
-## 训练技巧
-
-### 数据增强策略
-```python
-# 训练时数据增强
-transforms.Compose([
-    transforms.RandomHorizontalFlip(),
-    transforms.Resize((960, 540)),
-    transforms.RandomCrop(224),
-    transforms.ColorJitter(brightness=0.1, contrast=0.1),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=(0.485, 0.456, 0.406), 
-                        std=(0.229, 0.224, 0.225))
-])
-```
-
-### 学习率调度
-- **初始学习率**: 1e-4 (WaveViT), 2e-5 (HyperIQA)
-- **调度策略**: 每6个epoch衰减10倍
-- **权重衰减**: 5e-4
-
-### 损失函数
-- **主损失**: L1 Loss (平滑且稳定)
-- **辅助损失**: 排序损失 (可选)
-
-
-
-## 可视化分析
-
-### 注意力热图
-```python
-# 生成注意力可视化
-from wave_models.visualization import plot_attention_maps
-
-model.eval()
-attention_maps = model.get_attention_maps(input_image)
-plot_attention_maps(input_image, attention_maps, save_path='attention.png')
-```
-
-### 小波分解可视化
-```python
-# 可视化小波分解结果
-from wave_models.torch_wavelets import DWT_2D
-
-dwt = DWT_2D(wave='haar')
-coeffs = dwt(input_tensor)
-# coeffs包含LL, LH, HL, HH四个子带
-```
-
-## 常见问题
-
-### Q: 如何处理不同尺寸的输入图像？
-A: 模型会自动将输入resize到960×540，然后随机裁剪224×224的patch进行处理。
-
-### Q: 训练时GPU内存不足怎么办？
-A: 可以减小batch_size，或使用梯度累积：
-```python
-# 梯度累积示例
-accumulation_steps = 4
-for i, (images, labels) in enumerate(dataloader):
-    loss = model(images, labels) / accumulation_steps
-    loss.backward()
-    if (i + 1) % accumulation_steps == 0:
-        optimizer.step()
-        optimizer.zero_grad()
-```
-
-### Q: 如何在自定义数据集上训练？
-A: 参考`folders.py`中的`ESPL_LIVE_HDRFolder`类，实现自己的数据集类。
-
-## 引用
-
-如果您在研究中使用了本项目，请引用：
+If you use this code, please cite:
 
 ```bibtex
-@article{wavevit2024,
-  title={MS-WaveViT: Multi-Scale Wavelet Vision Transformer for Image Quality Assessment},
-  author={Your Name},
-  journal={arXiv preprint},
-  year={2024}
+@article{zhang2026mswavevit,
+  title   = {Multi-Scale Wavelet Vision Transformer with HDR-Aware Attention for High Dynamic Range Image Quality Assessment},
+  author  = {Zhang, Rui and Dong, Wu and Lu, Likun and Zhou, Ziyi and Zhang, Tianqi and Niu, Weipeng},
+  journal = {Manuscript under review},
+  year    = {2026}
 }
 ```
-
-## 许可证
-
-本项目基于MIT许可证开源，详见[LICENSE](LICENSE)文件。
-
-
-
-## 贡献
-
-欢迎提交Issue和Pull Request！请确保：
-1. 代码符合PEP8规范
-2. 添加必要的测试
-3. 更新相关文档
-
-## 联系方式
-
-如有问题，请通过以下方式联系：
-- 提交GitHub Issue
-- 邮箱：947683707@qq.com
-
----
-
-**注意**: 本项目仍在积极开发中，API可能会有变化。建议在生产环境使用前进行充分测试。
