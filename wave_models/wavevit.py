@@ -8,7 +8,8 @@ from timm.models import register_model
 from timm.models.vision_transformer import _cfg
 import math
 import numpy as np
-from torch_wavelets import DWT_2D, IDWT_2D
+# 修改这一行：使用本地的torch_wavelets模块
+from .torch_wavelets import DWT_2D, IDWT_2D
 
 
 def rand_bbox(size, lam, scale=1):
@@ -394,6 +395,69 @@ class Stem(nn.Module):
         return x, H, W
 
 
+# 删除第395-396行的错误定义：
+# def HDRAwareModule(param):
+#     pass
+
+# 替换为正确的HDRAwareModule类定义：
+class HDRAwareModule(nn.Module):
+    """HDR感知模块，用于处理高动态范围图像的特性"""
+    def __init__(self, dim):
+        super(HDRAwareModule, self).__init__()
+        self.dim = dim
+        
+        # 亮度感知分支
+        self.brightness_branch = nn.Sequential(
+            nn.Linear(dim, dim // 2),
+            nn.ReLU(),
+            nn.Linear(dim // 2, dim)
+        )
+        
+        # 对比度感知分支
+        self.contrast_branch = nn.Sequential(
+            nn.Linear(dim, dim // 2),
+            nn.ReLU(),
+            nn.Linear(dim // 2, dim)
+        )
+        
+        # 融合层
+        self.fusion = nn.Sequential(
+            nn.Linear(dim * 2, dim),
+            nn.Sigmoid()
+        )
+        
+        self.apply(self._init_weights)
+    
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+    
+    def forward(self, x, H, W):
+        # x: [B, N, C] - token格式输入
+        B, N, C = x.shape
+        
+        # 计算亮度特征（使用token的均值）
+        brightness_feat = torch.mean(x, dim=1, keepdim=True)  # [B, 1, C]
+        brightness_feat = brightness_feat.expand(-1, N, -1)   # [B, N, C]
+        brightness_out = self.brightness_branch(brightness_feat)
+        
+        # 计算对比度特征（使用token的标准差）
+        contrast_feat = torch.std(x, dim=1, keepdim=True)     # [B, 1, C]
+        contrast_feat = contrast_feat.expand(-1, N, -1)       # [B, N, C]
+        contrast_out = self.contrast_branch(contrast_feat)
+        
+        # 融合亮度和对比度特征
+        combined = torch.cat([brightness_out, contrast_out], dim=-1)  # [B, N, 2*C]
+        attention_weights = self.fusion(combined)  # [B, N, C]
+        
+        # 应用注意力权重
+        enhanced_x = x * attention_weights
+        
+        return enhanced_x
+
+
 class WaveViT(nn.Module):
     def __init__(self,
                  in_chans=3,
@@ -414,6 +478,10 @@ class WaveViT(nn.Module):
         self.num_classes = num_classes
         self.depths = depths
         self.num_stages = num_stages
+
+        # 添加HDR感知模块（已存在）
+        self.hdr_aware = HDRAwareModule(embed_dims[-1])
+        self.hdr_fusion = nn.Linear(embed_dims[-1], embed_dims[-1])
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
         cur = 0
@@ -502,6 +570,10 @@ class WaveViT(nn.Module):
                 norm = getattr(self, f"norm{i + 1}")
                 x = norm(x)
                 x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
+            # 在最后一个阶段应用HDR感知模块
+            elif i == self.num_stages - 1:
+                x_hdr = self.hdr_aware(x, H, W)
+                x = x + self.hdr_fusion(x_hdr)
 
         x = self.forward_cls(x)[:, 0]
         norm = getattr(self, f"norm{self.num_stages}")
@@ -635,3 +707,5 @@ def wavevit_l(pretrained=False, **kwargs):
         **kwargs)
     model.default_cfg = _cfg()
     return model
+
+
