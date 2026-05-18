@@ -36,7 +36,7 @@ def set_random_seeds(seed=None):
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 # 设置日志目录和文件
-log_dir = r'C:\Users\PC\Desktop\fsdownload\archive\hyperIQA-master\log'  # 修正路径格式
+log_dir = './log'  
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'train_log.txt')
 
@@ -67,10 +67,10 @@ def main(config):
     # 本地数据集路径
     # 修改folder_path字典，添加korshunov数据集
     folder_path = {
-        'ESPL_LIVE_HDR': 'c:\\Users\\PC\\Desktop\\fsdownload\\archive\\hyperIQA-master\\ESPL_LIVE_HDR_Database\\Images',
-        'narwaria': 'c:\\Users\\PC\\Desktop\\fsdownload\\archive\\hyperIQA-master\\upiq_dataset\\images\\narwaria',
-        'korshunov': 'c:\\Users\\PC\\Desktop\\fsdownload\\archive\\hyperIQA-master\\upiq_dataset\\images\\korshunov'
-    }
+    'ESPL_LIVE_HDR': './ESPL_LIVE_HDR_Database/Images',
+    'narwaria': './upiq_dataset/images/narwaria',
+    'korshunov': './upiq_dataset/images/korshunov'
+}
     
     # 修改img_num字典，添加korshunov数据集的图像数量
     img_num = {
@@ -90,7 +90,7 @@ def main(config):
     global_best_round = 0
     
     # 全局最优模型保存路径 - 包含数据集名称
-    global_save_dir = r'C:\Users\PC\Desktop\fsdownload\archive\hyperIQA-master\wave_models\saved_models'
+    global_save_dir = './wave_models/saved_models'
     os.makedirs(global_save_dir, exist_ok=True)
     global_best_path = os.path.join(global_save_dir, f'wave_model_global_best_{config.dataset}.pth')
     
