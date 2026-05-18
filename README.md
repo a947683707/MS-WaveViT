@@ -104,11 +104,11 @@ The main files for reproducing the proposed method are:
 - `wave_models/torch_wavelets.py`
 - `data_loader.py`
 - `folders.py`
-- ## Acknowledgement
 
-The HyperNet-TargetNet prediction paradigm is inspired by HyperIQA. We thank the HyperIQA authors for releasing their implementation.## Acknowledgement
+## Acknowledgement
 
 The HyperNet-TargetNet prediction paradigm is inspired by HyperIQA. We thank the HyperIQA authors for releasing their implementation.
+
 ## Citation
 
 If you use this code, please cite:
