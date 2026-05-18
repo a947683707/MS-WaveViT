@@ -50,12 +50,11 @@ MS-WaveViT/
 │   ├── wavevit.py
 │   └── torch_wavelets.py
 ├── models.py
-├── HyerIQASolver.py
+├── CITATION.cff
 └── README.md
 ```
 
-Note: `models.py` and `HyerIQASolver.py` correspond to the original HyperIQA baseline/reference implementation. They are not used as the default MS-WaveViT training pipeline.
-## Environment
+Note: `models.py` contains the TargetNet implementation used by the MS-WaveViT training pipeline. Legacy HyperIQA training scripts have been removed from the repository to avoid confusion.
 
 ```bash
 pip install torch torchvision
