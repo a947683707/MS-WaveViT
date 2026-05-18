@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "MS-WaveViT: Multi-Scale Wavelet Vision Transformer with HDR-Aware Attention for High Dynamic Range Image Quality Assessment"
+message: "If you use this code, please cite our paper."
+type: article
+authors:
+  - family-names: Zhang
+    given-names: Rui
+  - family-names: Dong
+    given-names: Wu
+  - family-names: Lu
+    given-names: Likun
+  - family-names: Zhou
+    given-names: Ziyi
+  - family-names: Zhang
+    given-names: Tianqi
+  - family-names: Niu
+    given-names: Weipeng
+repository-code: "https://github.com/a947683707/MS-WaveViT"
+keywords:
+  - HDR image quality assessment
+  - no-reference IQA
+  - wavelet attention
+  - vision transformer
+  - HyperNet
