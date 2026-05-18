@@ -1,3 +1,18 @@
+"""
+Original HyperIQA baseline solver.
+
+This file is retained only as a baseline/reference implementation.
+It is not used by the default MS-WaveViT training pipeline.
+
+The proposed MS-WaveViT model is implemented in:
+    wave_models/wavehypernet.py
+
+The proposed MS-WaveViT training solver is implemented in:
+    wave_models/wavehyper_solver.py
+
+The default training entry for the proposed method is:
+    train_mswavevit.py
+"""
 import os
 import torch
 from scipy import stats
