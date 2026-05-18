@@ -80,36 +80,58 @@ class MyDataLoader(object):
                     torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
                                                      std=(0.229, 0.224, 0.225))
                 ])
-        else:
-            raise ValueError(f"Unsupported dataset: {dataset}")
-
-        # 实例化对应数据集类
-        if dataset == 'live':
-            self.data = folders.LIVEFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'livec':
-            self.data = folders.LIVEChallengeFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'csiq':
-            self.data = folders.CSIQFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'koniq-10k':
-            self.data = folders.Koniq_10kFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'bid':
-            self.data = folders.BIDFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'tid2013':
-            self.data = folders.TID2013Folder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'ESPL_LIVE_HDR':
-            self.data = folders.ESPL_LIVE_HDRFolder(
-                root=path,
-                label_file=r'H:\ZhangR\hyperIQA-master\ESPl_label.txt',  # 修正路径格式
-                index=img_indx,
-                transform=transforms,
-                patch_num=patch_num)
-
+        elif dataset == 'narwaria':
+            if istrain:
+                transforms = torchvision.transforms.Compose([
+                    torchvision.transforms.RandomHorizontalFlip(),
+                    torchvision.transforms.Resize((512, 384)),
+                    torchvision.transforms.RandomCrop(size=patch_size),
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                                     std=(0.229, 0.224, 0.225))
+                ])
+            else:
+                transforms = torchvision.transforms.Compose([
+                    torchvision.transforms.Resize((512, 384)),
+                    torchvision.transforms.RandomCrop(size=patch_size),
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                                     std=(0.229, 0.224, 0.225))
+                ])
+            
+            from folders import NarwariaFolder
+            self.data = NarwariaFolder(
+                root=path, 
+                index=img_indx, 
+                transform=transforms, 
+                patch_num=patch_num
+            )
+        elif dataset == 'korshunov':
+            if istrain:
+                transforms = torchvision.transforms.Compose([
+                    torchvision.transforms.RandomHorizontalFlip(),
+                    torchvision.transforms.Resize((512, 384)),
+                    torchvision.transforms.RandomCrop(size=patch_size),
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                                     std=(0.229, 0.224, 0.225))
+                ])
+            else:
+                transforms = torchvision.transforms.Compose([
+                    torchvision.transforms.Resize((512, 384)),
+                    torchvision.transforms.RandomCrop(size=patch_size),
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                                     std=(0.229, 0.224, 0.225))
+                ])
+            
+            from folders import KorshunovFolder
+            self.data = KorshunovFolder(
+                root=path, 
+                index=img_indx, 
+                transform=transforms, 
+                patch_num=patch_num
+            )
         else:
             raise ValueError(f"Unsupported dataset: {dataset}")
 
@@ -121,3 +143,4 @@ class MyDataLoader(object):
             dataloader = torch.utils.data.DataLoader(
                 self.data, batch_size=1, shuffle=False)
         return dataloader
+

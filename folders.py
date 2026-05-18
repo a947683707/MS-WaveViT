@@ -5,6 +5,7 @@ import os.path
 import scipy.io
 import numpy as np
 import csv
+import cv2  # 添加这行导入
 from openpyxl import load_workbook
 
 
@@ -376,6 +377,194 @@ def getTIDFileName(path, suffix):
 
 
 def pil_loader(path):
-    with open(path, 'rb') as f:
-        img = Image.open(f)
-        return img.convert('RGB')
+    # 检查文件扩展名
+    if path.lower().endswith('.exr'):
+        # 使用OpenCV加载.exr文件
+        img = cv2.imread(path, cv2.IMREAD_COLOR | cv2.IMREAD_ANYDEPTH)
+        if img is None:
+            raise ValueError(f"Cannot load .exr file: {path}")
+        # 转换BGR到RGB
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # 将float32转换为uint8 (0-255范围)
+        img = np.clip(img * 255, 0, 255).astype(np.uint8)
+        # 转换为PIL Image
+        return Image.fromarray(img)
+    else:
+        # 对于其他格式，使用原来的PIL方法
+        with open(path, 'rb') as f:
+            img = Image.open(f)
+            return img.convert('RGB')
+
+
+class NarwariaFolder(data.Dataset):
+    def __init__(self, root, index, transform, patch_num):
+        """
+        root: narwaria图像文件夹路径 (upiq_dataset/images/narwaria)
+        index: 要使用的样本索引列表
+        transform: 图像变换
+        patch_num: 每张图片的增强次数
+        """
+        self.samples = []
+        self.transform = transform
+        
+        # 读取标签文件
+        csv_file = os.path.join(os.path.dirname(os.path.dirname(root)), 'upiq_subjective_scores.csv')
+        label_dict = {}
+        
+        with open(csv_file, 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if len(row) >= 12 and 'narwaria' in row[1]:  # 确保是narwaria数据
+                    img_path = row[6]  # test_file列
+                    jod_score = float(row[11])  # JOD列
+                    label_dict[img_path] = jod_score
+        
+        # 收集所有图像文件
+        all_images = []
+        for folder_num in range(1, 11):  # 01-10文件夹
+            folder_path = os.path.join(root, f"{folder_num:02d}")
+            if os.path.exists(folder_path):
+                for img_file in os.listdir(folder_path):
+                    if img_file.endswith('.exr'):
+                        relative_path = f"narwaria/{folder_num:02d}/{img_file}"
+                        if relative_path in label_dict:
+                            all_images.append((os.path.join(folder_path, img_file), label_dict[relative_path]))
+        
+        # 根据index选择样本
+        for i in index:
+            if i < len(all_images):
+                img_path, score = all_images[i]
+                for _ in range(patch_num):
+                    self.samples.append((img_path, score))
+    
+    def __getitem__(self, index):
+        path, target = self.samples[index]
+        sample = pil_loader(path)
+        if self.transform is not None:
+            sample = self.transform(sample)
+        return sample, target
+    
+    def __len__(self):
+        return len(self.samples)
+
+
+def getFileName(path, suffix):
+    filename = []
+    f_list = os.listdir(path)
+    for i in f_list:
+        if os.path.splitext(i)[1] == suffix:
+            filename.append(i)
+    return filename
+
+
+def getTIDFileName(path, suffix):
+    filename = []
+    f_list = os.listdir(path)
+    for i in f_list:
+        if suffix.find(os.path.splitext(i)[1]) != -1:
+            filename.append(i[1:3])
+    return filename
+
+
+class KorshunovFolder(data.Dataset):
+    def __init__(self, root, index, transform, patch_num):
+        """
+        Korshunov数据集加载器
+        root: korshunov数据集根目录路径
+        index: 要加载的图像索引列表
+        transform: 图像变换
+        patch_num: 每张图像的patch数量
+        """
+        self.samples = []
+        self.transform = transform
+        
+        # 读取主观分数CSV文件
+        csv_file = os.path.join(os.path.dirname(os.path.dirname(root)), 'upiq_subjective_scores.csv')
+        label_dict = {}
+        
+        with open(csv_file, 'r') as f:
+            reader = csv.reader(f)
+            next(reader)  # 跳过标题行
+            for row in reader:
+                if len(row) >= 12 and 'korshunov' in row[1]:  # 确保是korshunov数据
+                    img_path = row[6]  # test_file列
+                    jod_score = float(row[11])  # JOD列
+                    label_dict[img_path] = jod_score
+        
+        # 获取所有.exr文件
+        all_images = []
+        for subdir in sorted(os.listdir(root)):
+            subdir_path = os.path.join(root, subdir)
+            if os.path.isdir(subdir_path):
+                for img_file in sorted(os.listdir(subdir_path)):
+                    if img_file.endswith('.exr'):
+                        # 构建相对路径以匹配CSV中的路径格式
+                        relative_path = f"korshunov/{subdir}/{img_file}"
+                        img_full_path = os.path.join(subdir_path, img_file)
+                        
+                        if relative_path in label_dict:
+                            all_images.append((img_full_path, label_dict[relative_path]))
+                        else:
+                            print(f"Warning: {relative_path} not found in label file!")
+        
+        # 根据index选择图像，每张图像重复patch_num次
+        for i in index:
+            if i < len(all_images):
+                img_path, quality_score = all_images[i]
+                for _ in range(patch_num):
+                    self.samples.append((img_path, quality_score))
+    
+    def __getitem__(self, index):
+        path, target = self.samples[index]
+        # 加载EXR图像
+        try:
+            import cv2
+            # 使用OpenCV加载EXR文件
+            img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
+            if img is not None:
+                # 转换为RGB格式
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                # 转换为PIL Image
+                from PIL import Image
+                img = Image.fromarray((img * 255).astype(np.uint8))
+            else:
+                # 如果OpenCV无法加载，创建一个默认图像
+                from PIL import Image
+                img = Image.new('RGB', (512, 384), color='black')
+        except Exception as e:
+            print(f"Error loading {path}: {e}")
+            from PIL import Image
+            img = Image.new('RGB', (512, 384), color='black')
+        
+        if self.transform is not None:
+            img = self.transform(img)
+        
+        return img, target
+    
+    def __len__(self):
+        return len(self.samples)
+
+
+def getFileName(path, suffix):
+    filename = []
+    f_list = os.listdir(path)
+    for i in f_list:
+        if os.path.splitext(i)[1] == suffix:
+            filename.append(i)
+    return filename
+
+
+def getTIDFileName(path, suffix):
+    filename = []
+    f_list = os.listdir(path)
+    for i in f_list:
+        if suffix.find(os.path.splitext(i)[1]) != -1:
+            filename.append(i[1:3])
+    return filename
+
+
+# 删除这个重复的函数定义（第468-472行）
+# def pil_loader(path):
+#     with open(path, 'rb') as f:
+#         img = Image.open(f)
+#         return img.convert('RGB')
