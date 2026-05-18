@@ -135,7 +135,7 @@ class EnhancedWaveHyperNet_Stage2(nn.Module):
     def __init__(self,
                  target_in_size=448,
                  hyper_in_channels=64,
-                 pretrained_path=r"C:\Users\PC\Desktop\fsdownload\archive\hyperIQA-master\premodel\wavevit_s.pth"):
+                 pretrained_path='./premodel/wavevit_s.pth'):
         super(EnhancedWaveHyperNet_Stage2, self).__init__()
 
         self.backbone = wavevit_s()
@@ -271,7 +271,7 @@ class WaveHyperNet(nn.Module):
     def __init__(self,
                  target_in_size=448,
                  hyper_in_channels=64,
-                 pretrained_path=r"C:\Users\PC\Desktop\fsdownload\archive\hyperIQA-master\premodel\wavevit_s.pth"):
+                 pretrained_path='./premodel/wavevit_s.pth'):
         super(WaveHyperNet, self).__init__()
 
         self.backbone = wavevit_s()
