@@ -10,7 +10,6 @@ This repository has been updated to clarify the relationship between the propose
 The original WaveViT backbone contains Haar-based wavelet attention. In contrast, the proposed Multi-Scale Wavelet Attention (MSWA) module uses **Daubechies-4 (db4)** as the default wavelet basis.
 
 Therefore, the Haar wavelet mentioned in the backbone and the db4 wavelet used in the proposed MSWA module correspond to different parts of the architecture. The wavelet-basis ablation experiments in the manuscript refer to the MSWA module.
-
 ### 2. Relation to HyperIQA
 
 MS-WaveViT adopts the HyperNet-TargetNet prediction paradigm for content-adaptive quality regression. The original HyperIQA-related code is retained only as a baseline/reference implementation and is not the default training pipeline of the proposed model.
