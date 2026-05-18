@@ -53,7 +53,7 @@ class WaveHyperSolver(object):
         self.test_loader = test_loader.get_data()
         
         self.dataset_name = config.dataset
-        self.save_dir = r"C:\Users\PC\Desktop\fsdownload\archive\hyperIQA-master\wave_models\saved_models"
+        self.save_dir = "./wave_models/saved_models"
         os.makedirs(self.save_dir, exist_ok=True)
         
         self.total_batches = len(self.train_loader)
